@@ -1,0 +1,28 @@
+DECLARE @sales string = "sales/{OrderDate:yyyy}/{OrderDate:mm}/{*}.tsv";
+DECLARE @summary_file string = "sales/summary/summary.csv";
+
+@sales =
+EXTRACT OrderDate DateTime,
+        OrderID int,
+        CustomerID int,
+        CustomerName string,
+        OrderLineID int,
+        StockItemID int,
+        StockItemName string,
+        Quantity int,
+        UnitPrice decimal
+FROM @sales_file
+USING Extractors.Tsv(skipFirstNRows: 1);
+
+
+@orders = 
+SELECT OrderDate, OrderID, CustomerID, CustomerName, SUM(Quantity * UnitPrice) AS Total
+FROM @sales
+GROUP BY OrderDate, OrderID, CustomerID, CustomerName;
+
+
+OUTPUT @orders
+    TO @orders_file
+    ORDER BY OrderID
+    USING Outputters.Tsv();
+
